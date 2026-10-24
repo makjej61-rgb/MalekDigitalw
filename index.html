@@ -268,7 +268,7 @@ async function topup(){
 function reqCard(r,adm){
   const t=r.type==='code'?`🎟️ كود شحن ${money(r.amount)}`:r.type==='order'?`🛒 ${esc(r.pname)} · ${esc(r.game)} · ${money(r.price)}<div class="mu">ID: ${esc(r.player_id)}</div>`:`💰 شحن رصيد ${money(r.amount)}${r.method?' · '+esc(r.method):''}${r.syp?' ('+r.syp+' ل.س)':''}<div class="mu">عملية: ${esc(r.ref)}</div>`;
   const im=adm&&r.receipt_path?(imgCache[r.id]?`<img src="${imgCache[r.id]}" style="width:100%;border-radius:10px;margin-top:8px">`:`<button style="margin-top:8px" onclick="showImg('${r.id}','${esc(r.receipt_path)}')">عرض الإشعار</button>`):'';
-  const acts=adm&&r.status==='pending'?`<div class="row" style="margin-top:8px"><button class="ok" onclick="decide('${r.id}',true)">${r.type==='order'?'تم التنفيذ':'قبول'}</button><button class="bad" onclick="decide('${r.id}',false)">رفض</button></div>`:'';
+  const acts=adm&&r.status==='pending'?`<div class="row" style="margin-top:8px"><button class="ok" onclick="decide('${r.id}',true)">${r.type==='order'?'تم التنفيذ':'قبول'}</button><button class="bad" onclick="decide('${r.id}',false)">رفض</button></div>${r.type==='order'?`<button class="p" style="width:100%;margin-top:6px" onclick="autoFulfil('${r.id}')">${r.supplier_status==='wait'?'🔄 تحديث حالة الطلب':'⚡ تنفيذ تلقائي (النخبة)'}</button>`:''}`:'';
   return `<div class="c"><div class="row"><div>${t}${adm?`<div class="mu">${esc(names[r.user_id]||'')}</div>`:''}${r.note?`<div class="mu">${esc(r.note)}</div>`:''}</div><span class="tag ${r.status}">${ST[r.status]}</span></div>${im}${acts}</div>`;
 }
 const mineR=()=>reqs.filter(r=>r.user_id===me.id);
@@ -299,8 +299,8 @@ function adminView(){
   methods.map(m=>`<div class="c"><b>${esc(m.icon||'💳')} ${esc(m.name)}</b> <span class="mu">${esc(m.sub)}</span><textarea class="in" id="n_${m.id}" rows="2" placeholder="تعليمات التحويل">${esc(m.note)}</textarea><div class="row"><button class="p" onclick="saveNote(${m.id})">حفظ التعليمات</button><button class="bad" onclick="delMethod(${m.id})">حذف</button></div></div>`).join('')+
   `<h2>أكواد الشحن</h2><div class="c"><input class="in" id="cv" type="number" step="any" placeholder="قيمة الكود بالدولار"><input class="in" id="cn" type="number" min="1" max="50" placeholder="عدد الأكواد (حتى 50)"><button class="p" onclick="genCodes()">إنشاء أكواد</button>${newCodes.length?`<div class="mu" style="margin-top:8px">انسخها الآن، لن تظهر مرة ثانية:</div><textarea class="in" readonly rows="${Math.min(newCodes.length,8)+1}" onclick="this.select()">${newCodes.join('\n')}</textarea>`:''}</div>`+
   `<h2>إضافة منتج</h2><div class="c"><select class="in" id="pc">${CATS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select><input class="in" id="pn" placeholder="اسم المنتج (مثال: 660 UC)"><input class="in" id="pg" placeholder="اللعبة / الخدمة"><input class="in" id="pp" type="number" step="any" placeholder="السعر بالدولار"><input class="in" id="pi" placeholder="إيموجي (اختياري)"><button class="p" onclick="addProd()">إضافة</button></div>`+
-  products.map(p=>`<div class="c row"><span>${esc(p.icon||'🎮')} ${esc(p.name)} · ${money(p.price)}<div class="mu">${esc(CATS.find(c=>c[0]===p.cat)?.[1]||'بدون قسم')}</div></span><button class="bad" onclick="delProd(${p.id})">حذف</button></div>`).join('')+
-  `${custSection()}<h2>إعدادات المتجر</h2><div class="c"><div class="mu">شريط الأخبار المتحرك (اتركه فارغاً لإخفائه)</div><textarea class="in" id="s_ticker" rows="2">${esc(S.ticker===undefined?'👑 أهلاً بك في Malek Digital — شحن فوري وآمن لجميع الألعاب والخدمات':S.ticker)}</textarea><div class="mu">تعليمات الدفع العامة</div><textarea class="in" id="s_pay" rows="3">${esc(S.pay)}</textarea><div class="mu">رابط الدعم (واتساب أو تيليجرام)</div><input class="in" id="s_support" value="${esc(S.support)}" placeholder="https://wa.me/..."><div class="mu">سعر الصرف: كم ليرة سورية جديدة بالدولار الواحد</div><input class="in" id="s_rate" type="number" step="any" value="${esc(S.rate)}" placeholder="مثال: 120"><div class="mu">وكلاؤنا</div><textarea class="in" id="s_agents" rows="3">${esc(S.agents)}</textarea><div class="mu">الحماية</div><textarea class="in" id="s_safety" rows="3">${esc(S.safety)}</textarea><div class="mu">تحقق الهوية</div><textarea class="in" id="s_kyc" rows="3">${esc(S.kyc)}</textarea><div class="mu">من نحن</div><textarea class="in" id="s_about" rows="3">${esc(S.about)}</textarea><button class="p" onclick="saveSet()">حفظ</button></div>`;
+  products.map(p=>`<div class="c row"><span>${esc(p.icon||'🎮')} ${esc(p.name)} · ${money(p.price)}${p.supplier_id?' 🔗':''}<div class="mu">${esc(CATS.find(c=>c[0]===p.cat)?.[1]||'بدون قسم')}</div></span><button class="bad" onclick="delProd(${p.id})">حذف</button></div>`).join('')+
+  `${supSection()}${custSection()}<h2>إعدادات المتجر</h2><div class="c"><div class="mu">شريط الأخبار المتحرك (اتركه فارغاً لإخفائه)</div><textarea class="in" id="s_ticker" rows="2">${esc(S.ticker===undefined?'👑 أهلاً بك في Malek Digital — شحن فوري وآمن لجميع الألعاب والخدمات':S.ticker)}</textarea><div class="mu">تعليمات الدفع العامة</div><textarea class="in" id="s_pay" rows="3">${esc(S.pay)}</textarea><div class="mu">رابط الدعم (واتساب أو تيليجرام)</div><input class="in" id="s_support" value="${esc(S.support)}" placeholder="https://wa.me/..."><div class="mu">سعر الصرف: كم ليرة سورية جديدة بالدولار الواحد</div><input class="in" id="s_rate" type="number" step="any" value="${esc(S.rate)}" placeholder="مثال: 120"><div class="mu">وكلاؤنا</div><textarea class="in" id="s_agents" rows="3">${esc(S.agents)}</textarea><div class="mu">الحماية</div><textarea class="in" id="s_safety" rows="3">${esc(S.safety)}</textarea><div class="mu">تحقق الهوية</div><textarea class="in" id="s_kyc" rows="3">${esc(S.kyc)}</textarea><div class="mu">من نحن</div><textarea class="in" id="s_about" rows="3">${esc(S.about)}</textarea><button class="p" onclick="saveSet()">حفظ</button></div>`;
 }
 async function run(p,okMsg){const r=await p;if(r.error)return toast('تعذر التنفيذ: '+r.error.message);await refresh();if(okMsg)toast(okMsg)}
 function addProd(){
@@ -415,6 +415,47 @@ async function ban(id,b){
   const r=await SB.rpc('admin_set_ban',{p_user:id,p_ban:b});
   if(r.error)return toast('تعذر التنفيذ: '+r.error.message);
   await refresh();toast(b?'تم الحظر':'تم رفع الحظر');
+}
+
+let SUPL=[];
+async function fn(body){
+  const r=await SB.functions.invoke('alnukhba',{body});
+  if(r.error){let m=r.error.message;try{const j=await r.error.context.json();m=(j.error||m)+(j.detail?' '+JSON.stringify(j.detail).slice(0,160):'')}catch(e){}return {err:m}}
+  return {data:r.data};
+}
+function supSection(){
+  const q=($('#iq')?.value||'').toLowerCase(),mk=parseFloat($('#im')?.value);
+  const k=isNaN(mk)?15:mk;
+  const l=SUPL.filter(p=>p.available&&p.qty_values===null&&(!q||(p.name+' '+p.category_name).toLowerCase().includes(q))).slice(0,25);
+  return `<h2>المورد: متجر النخبة 🔗</h2><div class="c"><div class="row"><button class="p" onclick="supLoad()">تحميل المنتجات</button><button onclick="supBal()">رصيدي عندهم</button></div>`+
+  (SUPL.length?`<select class="in" id="ic">${CATS.map(([c,n])=>`<option value="${c}">${n}</option>`).join('')}</select><input class="in" id="im" type="number" step="any" placeholder="هامش الربح %" value="15"><input class="in" id="iq" placeholder="بحث (مثال: PUBG أو UC) ثم Enter" onchange="render()">`:'')+
+  l.map(p=>`<div class="row" style="margin-top:8px"><span style="font-size:14px">${esc(p.name)}<div class="mu">${esc(p.category_name)} · ${p.price}$ ← ${(p.price*(1+k/100)).toFixed(2)}$</div></span><button class="p" onclick="supAdd(${p.id})">إضافة</button></div>`).join('')+`</div>`;
+}
+async function supLoad(){
+  toast('جاري التحميل...');
+  const r=await fn({action:'products'});
+  if(r.err)return toast('تعذر: '+r.err);
+  SUPL=Array.isArray(r.data)?r.data:[];
+  if(!SUPL.length)return toast('لم يرجع المورد منتجات: '+JSON.stringify(r.data).slice(0,120));
+  render();toast('تم تحميل '+SUPL.length+' منتج');
+}
+async function supBal(){
+  const r=await fn({action:'profile'});
+  if(r.err)return toast('تعذر: '+r.err);
+  toast('رصيدك عند النخبة: '+(r.data&&r.data.balance!==undefined?r.data.balance:JSON.stringify(r.data).slice(0,100)));
+}
+function supAdd(id){
+  const p=SUPL.find(x=>x.id===id);if(!p)return;
+  const mk=parseFloat($('#im').value)||0;
+  run(SB.from('products').insert({name:p.name,game:p.category_name,price:Math.round(p.price*(1+mk/100)*100)/100,cat:$('#ic').value,icon:'🎮',supplier_id:p.id}),'تمت الإضافة');
+}
+async function autoFulfil(id){
+  toast('جاري التنفيذ...');
+  const r=await fn({action:'fulfil',request_id:id});
+  if(r.err)return toast('⚠️ '+r.err);
+  await refresh();
+  const m={done:'✅ تم التنفيذ وخُصم من رصيد الزبون',rejected:'❌ رفض المورد الطلب',waiting:'⏳ قيد التنفيذ عند المورد، اضغط تحديث الحالة بعد قليل',insufficient:'رصيد الزبون غير كافٍ'};
+  toast(m[r.data&&r.data.result]||'تم');
 }
 
 init();
