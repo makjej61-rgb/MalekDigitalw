@@ -88,6 +88,17 @@ h2{font-size:16px;margin:18px 0 6px}
 @keyframes shine{to{left:130%}}
 .mc .lv{font-size:28px;font-weight:800}.mc .bar{height:8px;border-radius:9px;background:rgba(0,0,0,.35);margin-top:14px;overflow:hidden}
 .mc .bar i{display:block;height:100%;background:#fff;border-radius:9px;transition:width .6s}
+.pg2{margin-top:6px}
+.pc{cursor:pointer;text-align:center}
+.pi{height:120px;border-radius:16px;display:flex;align-items:center;justify-content:center;padding:8px;font-weight:800;font-size:17px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.pn{margin-top:8px;font-size:16px;font-weight:700;line-height:1.3}
+.pp{color:#9fe3b3;font-weight:800;font-size:17px}
+.sd{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:22}
+.sh{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:auto;z-index:23;background:#0c0c10;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border:1px solid var(--bd)}
+.sh{left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(92vw,430px);max-width:none;margin:0;border-radius:24px;padding:20px;background:#000;border:1px solid #3b2a7a;box-shadow:0 0 40px rgba(110,70,255,.35)}
+.pill{background:linear-gradient(135deg,#7c4dff,#4a1fc0);border-radius:30px;padding:8px 18px;font-weight:700;font-size:18px;text-align:center;display:inline-block}
+.sy{color:#ffc928;font-weight:700;margin-top:4px;font-size:15px}
+.cx{flex:1;background:#000;border:1px solid #e0525a;color:#ff6b72;border-radius:40px;padding:16px;font-weight:700;font-size:16px}
 </style>
 </head>
 <body>
@@ -196,22 +207,29 @@ function drawer(){
     `<button class="it" onclick="logout()"><i>🚪</i>تسجيل الخروج</button>`;
 }
 
+const syp=v=>(Math.round(v*rate()*100)/100).toLocaleString('en')+' SY';
+const GIMG={};
+function gimg(g){g=(g||'').toLowerCase();const k=Object.keys(GIMG).find(x=>g.includes(x));return k?GIMG[k]:''}
+function gstyle(g){const i=gimg(g);if(i)return `background:#000 url(${i}) center/cover no-repeat`;let h=0;for(const c of (g||''))h=(h*31+c.charCodeAt(0))%360;return `background:linear-gradient(135deg,hsl(${h},65%,42%),hsl(${(h+50)%360},70%,18%))`}
+
 function shop(){
   const q=$('#q').value.trim().toLowerCase();
   if(!q&&!cat)return '<div class="grid">'+CATS.map(([k,n,i])=>`<div class="cat" onclick="cat='${k}';render()"><div class="img" ${IMG[k]?`style="background:#000 url(${IMG[k]}) center/contain no-repeat"`:''}>${IMG[k]?'':i+'<span class="l">'+n+'</span>'}</div><b>${n}</b></div>`).join('')+'</div>';
   const l=products.filter(p=>q?(p.name+' '+p.game).toLowerCase().includes(q):p.cat===cat);
   const title=cat&&!q?CATS.find(c=>c[0]===cat)[1]:'نتائج البحث';
   let h=`<button class="back" onclick="cat=null;$('#q').value='';render()">← رجوع</button><h2>${title}</h2>`;
-  h+=l.length?l.map(p=>`<div class="c"><div class="row"><div><b>${esc(p.icon||'🎮')} ${esc(p.name)}</b><div class="mu">${esc(p.game)}</div></div><div style="text-align:left"><b>${money(p.price)}</b><br><button class="p" style="margin-top:6px" onclick="buying=${p.id};render()">شراء</button></div></div></div>`).join(''):'<div class="c mu">لا توجد منتجات هنا بعد.</div>';
-  return h+(buying?buyBox():'');
+  h+=l.length?'<div class="grid pg2">'+l.map(p=>`<div class="pc" onclick="buying=${p.id};render()"><div class="pi" style="${gstyle(p.game)}">${gimg(p.game)?'':`<span>${esc(p.game)}</span>`}</div><div class="pn">${esc(p.name)}</div><div class="pp">${money(p.price)}</div>${rate()>0?`<div class="sy">${syp(p.price)}</div>`:''}</div>`).join('')+'</div>':'<div class="c mu">لا توجد منتجات هنا بعد.</div>';
+  return h+(buying?`<div class="sd" onclick="buying=null;render()"></div><div class="sh">${buyBox()}</div>`:'');
 }
 function buyBox(){
   const p=products.find(x=>x.id==buying);if(!p)return '';
   const low=bal()<p.price;
-  return `<div class="c" style="border-color:var(--ac)"><b>شراء: ${esc(p.name)}</b> <span class="mu">(${esc(p.game)})</span>
-  <input class="in" id="pid" placeholder="معرّف اللاعب / الرقم / الحساب">
-  ${low?'<div style="color:#ff6b6b;font-size:13px">رصيدك غير كافٍ، اشحن محفظتك أولاً.</div>':''}
-  <div class="row" style="margin-top:6px"><button class="p" ${low?'disabled':''} onclick="buy()">تأكيد الطلب ${money(p.price)}</button><button onclick="buying=null;render()">إلغاء</button></div></div>`;
+  const note=S.buynote===undefined?'يتم تنفيذ طلبك بعد المراجعة، وعادةً خلال دقائق.':S.buynote;
+  return `<div class="row" style="align-items:flex-start"><div><div class="pill">${money(p.price)}</div>${rate()>0?`<div class="sy">${syp(p.price)}</div>`:''}</div><div style="text-align:right;font-size:17px;font-weight:700">${esc(p.name)}<div class="mu" style="font-weight:400">${esc(p.game)}</div></div></div>
+  <input class="pf" id="pid" placeholder="الايدي" style="margin-top:14px">
+  ${low?'<div style="color:#ff6b6b;font-size:13px;text-align:center">رصيدك غير كافٍ، اشحن محفظتك أولاً.</div>':''}
+  <div class="row" style="gap:10px;margin-top:12px"><button class="pbtn" style="margin:0;flex:1" ${low?'disabled':''} onclick="buy()">شراء</button><button class="cx" onclick="buying=null;render()">إلغاء</button></div>
+  ${note?`<div class="mu" style="margin-top:14px;font-size:14px;text-align:center">${esc(note)}</div>`:''}`;
 }
 async function buy(){
   const p=products.find(x=>x.id==buying),pid=$('#pid').value.trim();
@@ -300,7 +318,7 @@ function adminView(){
   `<h2>أكواد الشحن</h2><div class="c"><input class="in" id="cv" type="number" step="any" placeholder="قيمة الكود بالدولار"><input class="in" id="cn" type="number" min="1" max="50" placeholder="عدد الأكواد (حتى 50)"><button class="p" onclick="genCodes()">إنشاء أكواد</button>${newCodes.length?`<div class="mu" style="margin-top:8px">انسخها الآن، لن تظهر مرة ثانية:</div><textarea class="in" readonly rows="${Math.min(newCodes.length,8)+1}" onclick="this.select()">${newCodes.join('\n')}</textarea>`:''}</div>`+
   `<h2>إضافة منتج</h2><div class="c"><select class="in" id="pc">${CATS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select><input class="in" id="pn" placeholder="اسم المنتج (مثال: 660 UC)"><input class="in" id="pg" placeholder="اللعبة / الخدمة"><input class="in" id="pp" type="number" step="any" placeholder="السعر بالدولار"><input class="in" id="pi" placeholder="إيموجي (اختياري)"><button class="p" onclick="addProd()">إضافة</button></div>`+
   products.map(p=>`<div class="c row"><span>${esc(p.icon||'🎮')} ${esc(p.name)} · ${money(p.price)}${p.supplier_id?' 🔗':''}<div class="mu">${esc(CATS.find(c=>c[0]===p.cat)?.[1]||'بدون قسم')}</div></span><button class="bad" onclick="delProd(${p.id})">حذف</button></div>`).join('')+
-  `${supSection()}${custSection()}<h2>إعدادات المتجر</h2><div class="c"><div class="mu">شريط الأخبار المتحرك (اتركه فارغاً لإخفائه)</div><textarea class="in" id="s_ticker" rows="2">${esc(S.ticker===undefined?'👑 أهلاً بك في Malek Digital — شحن فوري وآمن لجميع الألعاب والخدمات':S.ticker)}</textarea><div class="mu">تعليمات الدفع العامة</div><textarea class="in" id="s_pay" rows="3">${esc(S.pay)}</textarea><div class="mu">رابط الدعم (واتساب أو تيليجرام)</div><input class="in" id="s_support" value="${esc(S.support)}" placeholder="https://wa.me/..."><div class="mu">سعر الصرف: كم ليرة سورية جديدة بالدولار الواحد</div><input class="in" id="s_rate" type="number" step="any" value="${esc(S.rate)}" placeholder="مثال: 120"><div class="mu">وكلاؤنا</div><textarea class="in" id="s_agents" rows="3">${esc(S.agents)}</textarea><div class="mu">الحماية</div><textarea class="in" id="s_safety" rows="3">${esc(S.safety)}</textarea><div class="mu">تحقق الهوية</div><textarea class="in" id="s_kyc" rows="3">${esc(S.kyc)}</textarea><div class="mu">من نحن</div><textarea class="in" id="s_about" rows="3">${esc(S.about)}</textarea><button class="p" onclick="saveSet()">حفظ</button></div>`;
+  `${supSection()}${custSection()}<h2>إعدادات المتجر</h2><div class="c"><div class="mu">شريط الأخبار المتحرك (اتركه فارغاً لإخفائه)</div><textarea class="in" id="s_ticker" rows="2">${esc(S.ticker===undefined?'👑 أهلاً بك في Malek Digital — شحن فوري وآمن لجميع الألعاب والخدمات':S.ticker)}</textarea><div class="mu">ملاحظة نافذة الشراء (اتركها فارغة لإخفائها)</div><textarea class="in" id="s_buynote" rows="2">${esc(S.buynote===undefined?'يتم تنفيذ طلبك بعد المراجعة، وعادةً خلال دقائق.':S.buynote)}</textarea><div class="mu">تعليمات الدفع العامة</div><textarea class="in" id="s_pay" rows="3">${esc(S.pay)}</textarea><div class="mu">رابط الدعم (واتساب أو تيليجرام)</div><input class="in" id="s_support" value="${esc(S.support)}" placeholder="https://wa.me/..."><div class="mu">سعر الصرف: كم ليرة سورية جديدة بالدولار الواحد</div><input class="in" id="s_rate" type="number" step="any" value="${esc(S.rate)}" placeholder="مثال: 120"><div class="mu">وكلاؤنا</div><textarea class="in" id="s_agents" rows="3">${esc(S.agents)}</textarea><div class="mu">الحماية</div><textarea class="in" id="s_safety" rows="3">${esc(S.safety)}</textarea><div class="mu">تحقق الهوية</div><textarea class="in" id="s_kyc" rows="3">${esc(S.kyc)}</textarea><div class="mu">من نحن</div><textarea class="in" id="s_about" rows="3">${esc(S.about)}</textarea><button class="p" onclick="saveSet()">حفظ</button></div>`;
 }
 async function run(p,okMsg){const r=await p;if(r.error)return toast('تعذر التنفيذ: '+r.error.message);await refresh();if(okMsg)toast(okMsg)}
 function addProd(){
@@ -320,7 +338,7 @@ function saveNote(id){run(SB.from('methods').update({note:$('#n_'+id).value}).eq
 function delMethod(id){run(SB.from('methods').delete().eq('id',id))}
 function saveSet(){
   let u=$('#s_support').value.trim();if(u&&!/^https?:\/\//.test(u))u='';
-  const rows=[['ticker',$('#s_ticker').value],['pay',$('#s_pay').value],['support',u],['rate',$('#s_rate').value],['agents',$('#s_agents').value],['safety',$('#s_safety').value],['kyc',$('#s_kyc').value],['about',$('#s_about').value]].map(([key,value])=>({key,value}));
+  const rows=[['buynote',$('#s_buynote').value],['ticker',$('#s_ticker').value],['pay',$('#s_pay').value],['support',u],['rate',$('#s_rate').value],['agents',$('#s_agents').value],['safety',$('#s_safety').value],['kyc',$('#s_kyc').value],['about',$('#s_about').value]].map(([key,value])=>({key,value}));
   run(SB.from('settings').upsert(rows),'تم الحفظ');
 }
 async function genCodes(){
