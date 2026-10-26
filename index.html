@@ -195,7 +195,7 @@ function authView(){
 function menu(o){menuOpen=o;drawer()}
 function go(k){
   if(k.startsWith('i:')){tab='info';infoKey=k.slice(2)}else tab=k;
-  if(k==='shop'){cat=null;$('#q').value=''}
+  if(k==='shop'){cat=null;grp=null;$('#q').value=''}
   buying=null;payM=null;menuOpen=false;render();window.scrollTo(0,0);
 }
 function drawer(){
@@ -208,16 +208,24 @@ function drawer(){
 }
 
 const syp=v=>(Math.round(v*rate()*100)/100).toLocaleString('en')+' SY';
+let grp=null,GL=[];
 const GIMG={};
 function gimg(g){g=(g||'').toLowerCase();const k=Object.keys(GIMG).find(x=>g.includes(x));return k?GIMG[k]:''}
 function gstyle(g){const i=gimg(g);if(i)return `background:#000 url(${i}) center/cover no-repeat`;let h=0;for(const c of (g||''))h=(h*31+c.charCodeAt(0))%360;return `background:linear-gradient(135deg,hsl(${h},65%,42%),hsl(${(h+50)%360},70%,18%))`}
 
 function shop(){
   const q=$('#q').value.trim().toLowerCase();
-  if(!q&&!cat)return '<div class="grid">'+CATS.map(([k,n,i])=>`<div class="cat" onclick="cat='${k}';render()"><div class="img" ${IMG[k]?`style="background:#000 url(${IMG[k]}) center/contain no-repeat"`:''}>${IMG[k]?'':i+'<span class="l">'+n+'</span>'}</div><b>${n}</b></div>`).join('')+'</div>';
-  const l=products.filter(p=>q?(p.name+' '+p.game).toLowerCase().includes(q):p.cat===cat);
-  const title=cat&&!q?CATS.find(c=>c[0]===cat)[1]:'نتائج البحث';
-  let h=`<button class="back" onclick="cat=null;$('#q').value='';render()">← رجوع</button><h2>${title}</h2>`;
+  if(!q&&!cat)return '<div class="grid">'+CATS.map(([k,n,i])=>`<div class="cat" onclick="cat='${k}';grp=null;render()"><div class="img" ${IMG[k]?`style="background:#000 url(${IMG[k]}) center/contain no-repeat"`:''}>${IMG[k]?'':i+'<span class="l">'+n+'</span>'}</div><b>${n}</b></div>`).join('')+'</div>';
+  const inCat=cat?products.filter(p=>p.cat===cat):[];
+  const catName=cat?CATS.find(c=>c[0]===cat)[1]:'';
+  if(!q&&grp===null){
+    GL=[...new Set(inCat.map(p=>p.game))];
+    const hh=`<button class="back" onclick="cat=null;grp=null;render()">← رجوع</button><h2>${catName}</h2>`;
+    if(!GL.length)return hh+'<div class="c mu">لا توجد منتجات هنا بعد.</div>';
+    return hh+'<div class="grid pg2">'+GL.map((g,i)=>`<div class="pc" onclick="grp=GL[${i}];render()"><div class="pi" style="${gstyle(g)}">${gimg(g)?'':`<span>${esc(g)}</span>`}</div><div class="pn">${esc(g)}</div><div class="mu">${inCat.filter(p=>p.game===g).length} باقة</div></div>`).join('')+'</div>';
+  }
+  const l=q?products.filter(p=>(p.name+' '+p.game).toLowerCase().includes(q)):inCat.filter(p=>p.game===grp);
+  let h=q?`<button class="back" onclick="$('#q').value='';render()">← رجوع</button><h2>نتائج البحث</h2>`:`<button class="back" onclick="grp=null;render()">← رجوع</button><h2>${esc(grp)}</h2>`;
   h+=l.length?'<div class="grid pg2">'+l.map(p=>`<div class="pc" onclick="buying=${p.id};render()"><div class="pi" style="${gstyle(p.game)}">${gimg(p.game)?'':`<span>${esc(p.game)}</span>`}</div><div class="pn">${esc(p.name)}</div><div class="pp">${money(p.price)}</div>${rate()>0?`<div class="sy">${syp(p.price)}</div>`:''}</div>`).join('')+'</div>':'<div class="c mu">لا توجد منتجات هنا بعد.</div>';
   return h+(buying?`<div class="sd" onclick="buying=null;render()"></div><div class="sh">${buyBox()}</div>`:'');
 }
